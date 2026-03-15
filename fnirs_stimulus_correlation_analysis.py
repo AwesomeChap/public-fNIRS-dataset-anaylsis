@@ -5,7 +5,7 @@ Dataset: MNE fNIRS motor dataset (single subject, finger tapping task).
 Source: mne.datasets.fnirs_motor — recorded at Macquarie University.
 Conditions: Tapping/Left, Tapping/Right, Control (30 trials each, 5 s blocks).
 
-This script demonstrates that the fNIRS signal (HbO/HbR) is correlated with
+This script demonstrates that the fNIRS signal (HbO₂/HbR) is correlated with
 the stimulus by: (1) standard preprocessing, (2) epoch-level averaging,
 (3) comparing evoked responses (task vs control), and (4) a correlation
 between a stimulus regressor and the haemoglobin time series.
@@ -104,7 +104,7 @@ tapping_mean = evoked_tapping.get_data().mean(axis=0)
 control_mean = evoked_control.get_data().mean(axis=0)
 peak_tapping = tapping_mean[peak_mask].mean()
 peak_control = control_mean[peak_mask].mean()
-print(f"Mean HbO in peak window [{peak_tmin}-{peak_tmax} s] (averaged across channels):")
+print(f"Mean HbO₂ in peak window [{peak_tmin}-{peak_tmax} s] (averaged across channels):")
 print(f"  Tapping: {peak_tapping*1e6:.2f} µM (×1e6)")
 print(f"  Control: {peak_control*1e6:.2f} µM (×1e6)")
 print(f"  Difference (Tapping − Control): {(peak_tapping - peak_control)*1e6:.2f} µM")
@@ -131,7 +131,7 @@ for i, (onset, duration) in enumerate(zip(
         end_idx = min(int((onset + duration) * sfreq), n_times_raw)
         stimulus_regressor[start_idx:end_idx] = 1.0
 
-# Use HbO (mean across channels) as the fNIRS signal for correlation
+# Use HbO₂ (mean across channels) as the fNIRS signal for correlation
 raw_haemo_pick = raw_haemo.copy().pick(picks="hbo")
 fnirs_signal = raw_haemo_pick.get_data().mean(axis=0)
 # Remove mean and match length
@@ -139,10 +139,10 @@ fnirs_signal = fnirs_signal - np.mean(fnirs_signal)
 stimulus_regressor = stimulus_regressor - np.mean(stimulus_regressor)
 # Pearson correlation (same length)
 r, p_val = stats.pearsonr(stimulus_regressor, fnirs_signal)
-print(f"Pearson correlation (stimulus regressor vs mean HbO time series): r = {r:.4f}, p = {p_val:.2e}")
+print(f"Pearson correlation (stimulus regressor vs mean HbO₂ time series): r = {r:.4f}, p = {p_val:.2e}")
 print()
 
-# Per-epoch correlation: epoch-averaged HbO in peak window vs condition (1=tapping, 0=control)
+# Per-epoch correlation: epoch-averaged HbO₂ in peak window vs condition (1=tapping, 0=control)
 # This shows that trial-level “condition” predicts the haemodynamic response.
 tapping_ids = (event_id["Tapping/Left"], event_id["Tapping/Right"])
 epoch_peak_hbo = []
@@ -158,9 +158,9 @@ for i in range(n_epochs):
 epoch_peak_hbo = np.array(epoch_peak_hbo)
 epoch_condition = np.array(epoch_condition)
 r_epoch, p_epoch = stats.pearsonr(epoch_condition, epoch_peak_hbo)
-print(f"Trial-level: correlation(condition, peak HbO in epoch): r = {r_epoch:.4f}, p = {p_epoch:.2e}")
-print(f"Mean peak HbO (Tapping epochs): {epoch_peak_hbo[epoch_condition==1].mean()*1e6:.2f} µM")
-print(f"Mean peak HbO (Control epochs): {epoch_peak_hbo[epoch_condition==0].mean()*1e6:.2f} µM")
+print(f"Trial-level: correlation(condition, peak HbO₂ in epoch): r = {r_epoch:.4f}, p = {p_epoch:.2e}")
+print(f"Mean peak HbO₂ (Tapping epochs): {epoch_peak_hbo[epoch_condition==1].mean()*1e6:.2f} µM")
+print(f"Mean peak HbO₂ (Control epochs): {epoch_peak_hbo[epoch_condition==0].mean()*1e6:.2f} µM")
 print()
 
 # ---------------------------------------------------------------------------
@@ -169,7 +169,7 @@ print()
 out_dir = Path(__file__).resolve().parent / "results"
 out_dir.mkdir(exist_ok=True)
 
-# Figure 1: Evoked HbO/HbR for Tapping vs Control
+# Figure 1: Evoked HbO₂/HbR for Tapping vs Control
 fig, axes = plt.subplots(2, 1, figsize=(8, 5), sharex=True)
 for cond, label, color in [
     ("Tapping", "Tapping (Left + Right)", "C1"),
@@ -181,7 +181,7 @@ for cond, label, color in [
     # Evoked get_data() is (n_channels, n_times); mean over channels -> (n_times,)
     axes[0].plot(t, ev_hbo.get_data().mean(axis=0) * 1e6, label=label, color=color)
     axes[1].plot(t, ev_hbr.get_data().mean(axis=0) * 1e6, label=label, color=color)
-axes[0].set_ylabel("HbO (µM)")
+axes[0].set_ylabel("HbO₂ (µM)")
 axes[1].set_ylabel("HbR (µM)")
 axes[1].set_xlabel("Time (s)")
 axes[0].legend()
@@ -203,8 +203,8 @@ ax1.plot(t_plot, stimulus_regressor[:seg_len], color="orange", alpha=0.8, label=
 ax1.set_ylabel("Stimulus", color="orange")
 ax1.set_xlabel("Time (s)")
 ax2 = ax1.twinx()
-ax2.plot(t_plot, fnirs_signal[:seg_len] * 1e6, color="blue", alpha=0.7, label="Mean HbO")
-ax2.set_ylabel("HbO (µM)", color="blue")
+ax2.plot(t_plot, fnirs_signal[:seg_len] * 1e6, color="blue", alpha=0.7, label="Mean HbO₂")
+ax2.set_ylabel("HbO₂ (µM)", color="blue")
 ax1.legend(loc="upper left")
 ax2.legend(loc="upper right")
 ax1.set_title(f"Stimulus–signal alignment (r = {r:.3f}, p = {p_val:.2e})")
@@ -213,12 +213,12 @@ fig.savefig(out_dir / "stimulus_signal_timeseries.png", dpi=150, bbox_inches="ti
 plt.close(fig)
 print(f"Saved: {out_dir / 'stimulus_signal_timeseries.png'}")
 
-# Figure 3: Epoch-level condition vs peak HbO
+# Figure 3: Epoch-level condition vs peak HbO₂
 fig, ax = plt.subplots(figsize=(5, 4))
 ax.scatter(epoch_condition, epoch_peak_hbo * 1e6, alpha=0.6)
 ax.set_xticks([0, 1])
 ax.set_xticklabels(["Control", "Tapping"])
-ax.set_ylabel("Peak HbO in epoch (µM)")
+ax.set_ylabel("Peak HbO₂ in epoch (µM)")
 ax.set_xlabel("Condition")
 ax.set_title(f"Trial-level correlation: r = {r_epoch:.3f}, p = {p_epoch:.2e}")
 fig.tight_layout()
@@ -232,8 +232,8 @@ print("4. SUMMARY")
 print("=" * 60)
 print(
     "The analysis shows a clear relationship between the fNIRS signal and the stimulus:\n"
-    "  - Evoked HbO is larger during Tapping than during Control in the expected 4–10 s window.\n"
-    "  - The stimulus regressor (tapping on/off) is significantly correlated with the mean HbO time series.\n"
-    "  - At the trial level, condition (Tapping vs Control) predicts peak HbO in the haemodynamic window.\n"
+    "  - Evoked HbO₂ is larger during Tapping than during Control in the expected 4–10 s window.\n"
+    "  - The stimulus regressor (tapping on/off) is significantly correlated with the mean HbO₂ time series.\n"
+    "  - At the trial level, condition (Tapping vs Control) predicts peak HbO₂ in the haemodynamic window.\n"
     "This is consistent with increased cortical oxygenation over motor cortex during finger tapping."
 )
